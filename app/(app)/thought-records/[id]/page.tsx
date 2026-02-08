@@ -125,7 +125,7 @@ export default function ThoughtRecordDetailPage() {
           </CardContent>
         </Card>
       )}
-      <ThoughtRecordForm initialValue={record} onSave={save} profile={profile} />
+      <ThoughtRecordForm initialValue={record as ThoughtRecord} onSave={save} profile={profile} />
     </div>
   );
 }
