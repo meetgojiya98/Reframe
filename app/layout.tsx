@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import "@/app/globals.css";
 import { DynamicBackground } from "@/components/dynamic-background";
 import { AppToaster } from "@/components/ui/toaster";
@@ -45,7 +45,10 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationMismatch>
+    <html
+      lang="en"
+      {...({ suppressHydrationMismatch: true } as HTMLAttributes<HTMLHtmlElement>)}
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
