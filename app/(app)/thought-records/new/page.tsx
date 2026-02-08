@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProfile, useThoughtRecord } from "@/hooks/use-user-data";
 import { apiThoughtRecordPost } from "@/lib/api";
-import { ThoughtRecord } from "@/lib/types";
+import { ThoughtRecord, Profile } from "@/lib/types";
 
 const TEMPLATES: { id: string; label: string; situation: string }[] = [
   { id: "anxiety", label: "Anxiety", situation: "A moment when I felt anxious or worried (e.g. before a conversation, about the future)." },
@@ -74,7 +74,7 @@ export default function NewThoughtRecordPage() {
           </CardContent>
         </Card>
       ) : (
-        <ThoughtRecordForm initialSituation={initialSituation} initialThoughts={initialThoughts} onSave={save} profile={profile} />
+        <ThoughtRecordForm initialSituation={initialSituation} initialThoughts={initialThoughts} onSave={save} profile={profile as Profile | undefined} />
       )}
     </div>
   );
