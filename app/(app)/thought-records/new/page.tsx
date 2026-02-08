@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { ThoughtRecordForm } from "@/components/thought-record/thought-record-form";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ const TEMPLATES: { id: string; label: string; situation: string }[] = [
   { id: "self-criticism", label: "Self-criticism", situation: "A time I was hard on myself or compared myself to others." }
 ];
 
-export default function NewThoughtRecordPage() {
+function NewThoughtRecordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { profile } = useProfile();
@@ -77,5 +77,13 @@ export default function NewThoughtRecordPage() {
         <ThoughtRecordForm initialSituation={initialSituation} initialThoughts={initialThoughts} onSave={save} profile={profile as Profile | undefined} />
       )}
     </div>
+  );
+}
+
+export default function NewThoughtRecordPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[200px] items-center justify-center text-muted-foreground">Loading…</div>}>
+      <NewThoughtRecordContent />
+    </Suspense>
   );
 }
