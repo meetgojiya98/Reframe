@@ -18,9 +18,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GOAL_OPTIONS, DISCLAIMER_LINES } from "@/lib/constants";
-import { useProfile } from "@/hooks/use-user-data";
+import { REMINDER_ENABLED_KEY } from "@/components/checkin-reminder-banner";
+import { useProfile, useCheckins, useThoughtRecords, useSkillCompletions, useSavedInsights } from "@/hooks/use-user-data";
 import { apiProfilePut, apiExportGet } from "@/lib/api";
 import { GoalOption } from "@/lib/types";
 import { clamp, downloadJsonFile } from "@/lib/utils";
@@ -52,8 +54,14 @@ const DEFAULT_MODEL_SETTINGS: ModelSettings = {
 
 export default function SettingsPage() {
   const { profile, mutate: mutateProfile } = useProfile();
+  const { checkins } = useCheckins();
+  const { thoughtRecords } = useThoughtRecords();
+  const { completions: skillCompletions } = useSkillCompletions();
+  const { savedInsights } = useSavedInsights();
   const [modelSettings, setModelSettings] = useState<ModelSettings>(DEFAULT_MODEL_SETTINGS);
   const [localOnly, setLocalOnly] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -62,9 +70,13 @@ export default function SettingsPage() {
 
       const rawSettings = localStorage.getItem("reframe_model_settings");
       setModelSettings(rawSettings ? { ...DEFAULT_MODEL_SETTINGS, ...JSON.parse(rawSettings) } : DEFAULT_MODEL_SETTINGS);
+
+      const rawReminder = localStorage.getItem(REMINDER_ENABLED_KEY);
+      setReminderEnabled(rawReminder === null ? true : JSON.parse(rawReminder));
     } catch {
       setModelSettings(DEFAULT_MODEL_SETTINGS);
       setLocalOnly(false);
+      setReminderEnabled(true);
     }
   }, []);
 
@@ -120,9 +132,9 @@ export default function SettingsPage() {
 
   if (profile === undefined) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <PageHeader title="Settings" />
-        <Card>
+        <Card className="rounded-2xl">
           <CardContent className="p-6">
             <p className="text-muted-foreground">Loading…</p>
           </CardContent>
@@ -132,11 +144,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-4 pb-8">
-      <PageHeader subtitle="Adjust privacy, AI, and data preferences." title="Settings" />
+    <div className="space-y-6 pb-8">
+      <PageHeader
+        badge="Preferences"
+        subtitle="Privacy, AI, and data."
+        title="Settings"
+      />
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="rounded-xl">
+        <TabsList className="flex w-full rounded-xl border-2 sm:w-auto">
           <TabsTrigger value="profile" className="rounded-lg">Profile</TabsTrigger>
           <TabsTrigger value="privacy" className="rounded-lg">Privacy & AI</TabsTrigger>
           <TabsTrigger value="data" className="rounded-lg">Data</TabsTrigger>
@@ -144,18 +160,19 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="profile">
-          <Card className="border-border/80 rounded-2xl shadow-sm">
+          <Card className="overflow-hidden rounded-2xl border-border/80 shadow-sm">
             <CardHeader>
               <CardTitle>Profile</CardTitle>
               <CardDescription>Name, goals, and preferred check-in time.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5">
               <div className="space-y-2">
                 <label className="text-sm font-medium" htmlFor="display-name-settings">
                   Display name
                 </label>
                 <Input
                   id="display-name-settings"
+                  className="rounded-xl border-2"
                   onChange={(event) => updateProfile({ displayName: event.target.value })}
                   value={profile.displayName}
                 />
@@ -170,8 +187,8 @@ export default function SettingsPage() {
                     const Icon = GOAL_ICONS[goal.id];
                     return (
                       <button
-                        className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
-                          active ? "border-primary bg-primary/10 text-foreground" : "hover:bg-secondary/40"
+                        className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-left text-sm font-medium transition ${
+                          active ? "border-primary bg-primary/10 text-foreground" : "border-border/80 hover:bg-muted/40"
                         }`}
                         key={goal.id}
                         onClick={() => toggleGoal(goal.id)}
@@ -185,12 +202,26 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              <div className="flex items-center justify-between rounded-2xl border-2 border-border/80 p-4 transition hover:bg-muted/20">
+                <div>
+                  <p className="font-semibold">Check-in reminder</p>
+                  <p className="text-xs text-muted-foreground">Show a banner around your preferred time on the Today page.</p>
+                </div>
+                <Switch
+                  checked={reminderEnabled}
+                  onCheckedChange={(checked) => {
+                    setReminderEnabled(checked);
+                    localStorage.setItem(REMINDER_ENABLED_KEY, JSON.stringify(checked));
+                  }}
+                />
+              </div>
               <div className="max-w-xs space-y-2">
                 <label className="text-sm font-medium" htmlFor="checkin-time-settings">
                   Preferred check-in time
                 </label>
                 <Input
                   id="checkin-time-settings"
+                  className="rounded-xl border-2"
                   onChange={(event) => updateProfile({ preferredCheckinTime: event.target.value })}
                   type="time"
                   value={profile.preferredCheckinTime}
@@ -201,7 +232,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="privacy">
-          <Card className="border-border/80 rounded-2xl shadow-sm">
+          <Card className="overflow-hidden rounded-2xl border-border/80 shadow-sm">
             <CardHeader>
               <CardTitle>Privacy and AI</CardTitle>
               <CardDescription>
@@ -209,35 +240,32 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border/80 p-4 transition hover:bg-muted/30">
+              <div className="flex items-center justify-between rounded-2xl border-2 border-border/80 p-4 transition hover:bg-muted/20">
                 <div>
-                  <p className="font-medium">Enable AI Coach (uses OpenAI)</p>
+                  <p className="font-semibold">Enable AI Coach (uses OpenAI)</p>
                   <p className="text-xs text-muted-foreground">Off by default until you enable.</p>
                 </div>
-                <input
+                <Switch
                   checked={profile.aiEnabled}
-                  onChange={(event) => updateProfile({ aiEnabled: event.target.checked })}
-                  type="checkbox"
-                  className="peer sr-only"
+                  onCheckedChange={(checked) => updateProfile({ aiEnabled: checked })}
                 />
-                <span className="relative h-6 w-11 shrink-0 rounded-full bg-muted after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-card after:shadow after:transition-[left] after:content-[''] peer-checked:bg-primary peer-checked:after:left-[22px]" />
-              </label>
+              </div>
 
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-border/80 p-4 transition hover:bg-muted/30">
+              <div className="flex items-center justify-between rounded-2xl border-2 border-border/80 p-4 transition hover:bg-muted/20">
                 <div>
-                  <p className="font-medium">Local-only mode</p>
+                  <p className="font-semibold">Local-only mode</p>
                   <p className="text-xs text-muted-foreground">Blocks all AI requests; everything stays local.</p>
                 </div>
-                <input checked={localOnly} onChange={(event) => toggleLocalOnly(event.target.checked)} type="checkbox" className="peer sr-only" />
-                <span className={`relative h-6 w-11 shrink-0 rounded-full after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-card after:shadow after:transition-[left] after:content-[''] ${localOnly ? "bg-primary after:left-[22px]" : "bg-muted"}`} />
-              </label>
+                <Switch checked={localOnly} onCheckedChange={toggleLocalOnly} />
+              </div>
 
-              <div className="space-y-3 rounded-lg border p-4">
-                <p className="text-sm font-medium">Advanced model settings</p>
+              <div className="space-y-3 rounded-2xl border-2 border-border/80 bg-muted/10 p-4">
+                <p className="text-sm font-semibold">Advanced model settings</p>
 
                 <label className="space-y-1 text-sm">
                   Model
                   <Input
+                    className="rounded-xl border-2"
                     onChange={(event) =>
                       setModelSettings((prev) => ({
                         ...prev,
@@ -251,6 +279,7 @@ export default function SettingsPage() {
                 <label className="space-y-1 text-sm">
                   Temperature (0-1)
                   <Input
+                    className="rounded-xl border-2"
                     max={1}
                     min={0}
                     onChange={(event) =>
@@ -268,6 +297,7 @@ export default function SettingsPage() {
                 <label className="space-y-1 text-sm">
                   Max tokens (up to 450)
                   <Input
+                    className="rounded-xl border-2"
                     max={450}
                     min={64}
                     onChange={(event) =>
@@ -281,7 +311,7 @@ export default function SettingsPage() {
                   />
                 </label>
 
-                <Button onClick={() => saveModelSettings(modelSettings)} size="sm" variant="secondary">
+                <Button className="rounded-xl" onClick={() => saveModelSettings(modelSettings)} size="sm" variant="secondary">
                   Save model settings
                 </Button>
               </div>
@@ -290,16 +320,42 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="data">
-          <Card className="border-border/80 rounded-2xl shadow-sm">
+          <Card className="overflow-hidden rounded-2xl border-primary/15 bg-gradient-to-br from-primary/5 to-transparent shadow-sm">
+            <CardHeader>
+              <CardTitle>Your data at a glance</CardTitle>
+              <CardDescription>Counts stored with your account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-xl border-2 border-border/60 bg-card p-4">
+                  <p className="text-2xl font-bold tabular-nums">{checkins?.length ?? 0}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Check-ins</p>
+                </div>
+                <div className="rounded-xl border-2 border-border/60 bg-card p-4">
+                  <p className="text-2xl font-bold tabular-nums">{thoughtRecords?.length ?? 0}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Thought records</p>
+                </div>
+                <div className="rounded-xl border-2 border-border/60 bg-card p-4">
+                  <p className="text-2xl font-bold tabular-nums">{skillCompletions?.length ?? 0}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Skill completions</p>
+                </div>
+                <div className="rounded-xl border-2 border-border/60 bg-card p-4">
+                  <p className="text-2xl font-bold tabular-nums">{savedInsights?.length ?? 0}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Saved insights</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="overflow-hidden rounded-2xl border-border/80 shadow-sm">
             <CardHeader>
               <CardTitle>Data controls</CardTitle>
               <CardDescription>Your entries stay on this device unless you export them.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button onClick={handleExport} variant="secondary">
+            <CardContent className="flex flex-wrap gap-3">
+              <Button className="rounded-xl" onClick={handleExport} variant="secondary">
                 Export JSON
               </Button>
-              <Button onClick={handleDeleteAll} variant="destructive">
+              <Button className="rounded-xl" onClick={handleDeleteAll} variant="destructive">
                 Delete all data
               </Button>
             </CardContent>
@@ -307,23 +363,43 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="safety">
-          <Card className="border-border/80 rounded-2xl shadow-sm">
+          <Card className="overflow-hidden rounded-2xl border-border/80 shadow-sm">
             <CardHeader>
               <CardTitle>Safety policy and disclaimer</CardTitle>
               <CardDescription>
                 Reframe is an educational tool and not a substitute for licensed professional care.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
+            <CardContent className="space-y-3 text-sm">
               {DISCLAIMER_LINES.map((line) => (
-                <p className="rounded-lg border bg-secondary/35 p-3" key={line}>
+                <p className="rounded-xl border-2 border-border/60 bg-muted/20 p-4 leading-relaxed" key={line}>
                   {line}
                 </p>
               ))}
               <p className="text-muted-foreground">
-                Vercel readiness note: Your entries stay on this device unless you export them.
+                Your entries stay on this device unless you export them.
               </p>
             </CardContent>
+          </Card>
+          <Card className="overflow-hidden rounded-2xl border-border/80 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setHowItWorksOpen((o) => !o)}
+              className="flex w-full items-center justify-between p-5 text-left transition hover:bg-muted/30"
+            >
+              <CardTitle className="text-base">How Reframe works</CardTitle>
+              <span className="text-muted-foreground">{howItWorksOpen ? "−" : "+"}</span>
+            </button>
+            {howItWorksOpen && (
+              <CardContent className="border-t border-border/60 pt-4">
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li><strong className="text-foreground">CBT-inspired:</strong> Thought records and skills are based on evidence-based cognitive behavioral ideas.</li>
+                  <li><strong className="text-foreground">Local-first:</strong> Your journal and check-ins stay on your device; no account required to try the app.</li>
+                  <li><strong className="text-foreground">Optional AI:</strong> The Coach uses AI only when you enable it; you can use everything else offline.</li>
+                  <li><strong className="text-foreground">Patterns, not scores:</strong> Insights help you notice trends without judging good or bad.</li>
+                </ul>
+              </CardContent>
+            )}
           </Card>
         </TabsContent>
       </Tabs>

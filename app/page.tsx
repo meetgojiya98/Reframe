@@ -82,7 +82,7 @@ export default function HomePage() {
     <div className="min-h-screen overflow-x-hidden">
       {/* Hero with gradient mesh + floating orbs */}
       <header className="relative overflow-hidden px-4 pt-16 pb-24 sm:px-6 sm:pt-24 sm:pb-32 lg:px-8">
-        {/* Dynamic gradient orbs (Stripe-style) */}
+        {/* Dynamic gradient orbs */}
         <div className="pointer-events-none absolute inset-0">
           <div
             className="absolute -left-40 -top-40 h-80 w-80 rounded-full opacity-30 blur-3xl animate-float"
@@ -120,10 +120,10 @@ export default function HomePage() {
             CBT-inspired · Privacy-first
           </motion.p>
           <motion.div className="flex flex-col items-center gap-3" variants={item}>
-            <ReframeLogo variant="full" size="xl" gradientWordmark className="scale-90 sm:scale-100 lg:scale-110" />
+            <ReframeLogo variant="full" size="xl" gradientWordmark className="scale-90 sm:scale-100 lg:scale-110 text-display" />
           </motion.div>
           <motion.p
-            className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground sm:text-xl"
+            className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground sm:text-xl leading-relaxed"
             variants={item}
           >
             {APP_TAGLINE}
@@ -173,7 +173,7 @@ export default function HomePage() {
 
       {/* What Reframe is — split layout with dynamic visual */}
       <section className="relative overflow-hidden border-t border-border/60 px-4 py-20 sm:px-6 lg:px-8">
-        {/* Ambient orbs for depth */}
+        {/* Ambient orbs */}
         <div className="pointer-events-none absolute inset-0">
           <div
             className="absolute left-0 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full opacity-15 blur-3xl"
@@ -213,14 +213,12 @@ export default function HomePage() {
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
-                {/* Subtle animated ring */}
                 <motion.div
                   className="absolute -inset-1 rounded-2xl border-2 border-primary/20"
                   animate={{ opacity: [0.3, 0.7, 0.3] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 />
               </motion.div>
-              {/* Floating metric pills */}
               <motion.div
                 className="absolute -right-2 top-1/4 flex gap-2"
                 initial={{ opacity: 0, y: 10 }}
@@ -253,7 +251,7 @@ export default function HomePage() {
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             >
-              <h2 className="font-serif text-2xl font-semibold text-foreground sm:text-3xl lg:text-left">
+              <h2 className="text-heading text-2xl text-foreground sm:text-3xl lg:text-left">
                 What is Reframe?
               </h2>
               <p className="mt-4 text-muted-foreground leading-relaxed lg:text-left">
@@ -300,7 +298,7 @@ export default function HomePage() {
       <section className="relative border-t border-border/60 bg-muted/20 px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <motion.h3
-            className="text-center font-serif text-2xl font-semibold text-foreground sm:text-3xl"
+            className="text-heading text-center text-2xl text-foreground sm:text-3xl"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -395,7 +393,7 @@ export default function HomePage() {
       <section className="relative border-t border-border/60 bg-muted/30 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <motion.h2
-            className="text-center font-serif text-2xl font-semibold text-foreground sm:text-3xl"
+            className="text-heading text-center text-2xl text-foreground sm:text-3xl"
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

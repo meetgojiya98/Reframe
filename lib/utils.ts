@@ -107,3 +107,26 @@ export function downloadJsonFile(filename: string, data: unknown) {
 export function clamp(n: number, min: number, max: number) {
   return Math.min(Math.max(n, min), max);
 }
+
+/** Parse optional "Sleep: N" from the start of a check-in note. Returns null if not present or invalid. */
+export function parseSleepFromCheckinNote(note: string | undefined): number | null {
+  if (!note?.trim()) return null;
+  const match = note.match(/^Sleep:\s*(\d{1,2})(?:\s|$|\n)/);
+  if (!match) return null;
+  const val = parseInt(match[1], 10);
+  return val >= 0 && val <= 10 ? val : null;
+}
+
+/** Parse optional "Tags: a,b,c" from check-in note (after Sleep if present). Returns [] if not present. */
+export function parseTagsFromCheckinNote(note: string | undefined): string[] {
+  if (!note?.trim()) return [];
+  let rest = note.trim();
+  const sleepMatch = rest.match(/^Sleep:\s*\d{1,2}(?:\s|$|\n)/);
+  if (sleepMatch) rest = rest.slice(sleepMatch[0].length).trim();
+  const tagsMatch = rest.match(/^Tags:\s*([^\n]+?)(?:\n\n|\n*$)/);
+  if (!tagsMatch) return [];
+  return tagsMatch[1]
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+}

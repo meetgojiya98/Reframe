@@ -89,7 +89,12 @@ export const COMMON_EMOTIONS = [
   "Frustrated",
   "Lonely",
   "Hopeful",
-  "Calm"
+  "Calm",
+  "Worried",
+  "Disappointed",
+  "Irritable",
+  "Grateful",
+  "Peaceful"
 ] as const;
 
 export const SKILLS_LIBRARY: SkillDefinition[] = [

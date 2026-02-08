@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { and, desc, eq } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth-server";
+import { withApiHandler, parseAndValidate } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { skillCompletions } from "@/lib/db/schema";
+import { skillCompletionPostSchema } from "@/lib/validations";
 
-export async function GET(request: Request) {
+export const GET = withApiHandler(async (request) => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -29,25 +31,25 @@ export async function GET(request: Request) {
       reflection: r.reflection ?? undefined
     }))
   );
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request) => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
+  const [body, err] = await parseAndValidate(request, skillCompletionPostSchema);
+  if (err) return err;
+
   const id = body.id ?? `skill_${crypto.randomUUID()}`;
-  const skillId = body.skillId as string;
-  const reflection = body.reflection as string | undefined;
   const createdAt = body.createdAt ? new Date(body.createdAt) : new Date();
 
   await db.insert(skillCompletions).values({
     id,
     userId,
-    skillId,
-    reflection: reflection ?? null,
+    skillId: body.skillId,
+    reflection: body.reflection ?? null,
     createdAt
   });
 
   return NextResponse.json({ ok: true, id });
-}
+});

@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth-server";
+import { withApiHandler, parseAndValidate } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { profile as profileTable } from "@/lib/db/schema";
 import type { GoalOption } from "@/lib/types";
+import { profilePutSchema } from "@/lib/validations";
 
-export async function GET() {
+export const GET = withApiHandler(async () => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -20,19 +22,21 @@ export async function GET() {
     aiEnabled: row.aiEnabled,
     preferredCheckinTime: row.preferredCheckinTime
   });
-}
+});
 
-export async function PUT(request: Request) {
+export const PUT = withApiHandler(async (request) => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
+  const [body, err] = await parseAndValidate(request, profilePutSchema);
+  if (err) return err;
+
   const [existing] = await db.select().from(profileTable).where(eq(profileTable.userId, userId)).limit(1);
 
-  const displayName = typeof body.displayName === "string" ? body.displayName : existing?.displayName ?? "Friend";
-  const goals = Array.isArray(body.goals) ? body.goals : existing?.goals ?? ["stress"];
-  const aiEnabled = typeof body.aiEnabled === "boolean" ? body.aiEnabled : existing?.aiEnabled ?? false;
-  const preferredCheckinTime = typeof body.preferredCheckinTime === "string" ? body.preferredCheckinTime : existing?.preferredCheckinTime ?? "09:00";
+  const displayName = body.displayName ?? existing?.displayName ?? "Friend";
+  const goals = body.goals ?? existing?.goals ?? ["stress"];
+  const aiEnabled = body.aiEnabled ?? existing?.aiEnabled ?? false;
+  const preferredCheckinTime = body.preferredCheckinTime ?? existing?.preferredCheckinTime ?? "09:00";
 
   await db
     .insert(profileTable)
@@ -49,4 +53,4 @@ export async function PUT(request: Request) {
     });
 
   return NextResponse.json({ ok: true });
-}
+});

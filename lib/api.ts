@@ -192,3 +192,57 @@ export async function apiExportGet() {
     savedInsights: unknown[];
   }>(`${BASE}/api/user/export`);
 }
+
+// --- AI app features (require auth + AI enabled) ---
+
+export async function apiAiWeeklyRecap(body: {
+  windowDays: number;
+  checkinCount: number;
+  avgMood: string | null;
+  thoughtRecordCount: number;
+  skillCount: number;
+  streak?: number;
+}) {
+  return fetchJson<{ recap: string }>(`${BASE}/api/ai/weekly-recap`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+export async function apiAiTodaySuggestions(body: {
+  mood: number;
+  energy: number;
+  goals?: string[];
+  recentActions?: string;
+  intention?: string;
+}) {
+  return fetchJson<{
+    dailyTip: string;
+    suggestedActions: Array<{ title: string; description: string; href: string }>;
+  }>(`${BASE}/api/ai/today-suggestions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+export async function apiAiSkillsRecommend(body: {
+  goals?: string[];
+  recentMood?: number;
+  recentThemes?: string;
+}) {
+  return fetchJson<{ skillIds: string[]; reason?: string }>(`${BASE}/api/ai/skills-recommend`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+export async function apiAiAffirmation(body?: { context?: string }) {
+  return fetchJson<{ affirmation: string }>(`${BASE}/api/ai/affirmation`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {})
+  });
+}

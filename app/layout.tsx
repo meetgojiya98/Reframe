@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import type { ReactNode } from "react";
 import "@/app/globals.css";
+import { DynamicBackground } from "@/components/dynamic-background";
 import { AppToaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers/session-provider";
 
@@ -35,7 +36,7 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   viewportFit: "cover",
-  themeColor: "#2d8a6e"
+  themeColor: "#2a7a5e"
 };
 
 export default function RootLayout({
@@ -44,12 +45,22 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationMismatch>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem("reframe_theme");if(t==="dark"||(!t&&window.matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.classList.add("dark");else document.documentElement.classList.remove("dark");})();`
+          }}
+        />
+      </head>
       <body className={`${manrope.variable} ${fraunces.variable}`}>
-        <SessionProvider>
-          {children}
-          <AppToaster />
-        </SessionProvider>
+        <DynamicBackground />
+        <div className="relative z-10 min-h-screen bg-transparent">
+          <SessionProvider>
+            {children}
+            <AppToaster />
+          </SessionProvider>
+        </div>
       </body>
     </html>
   );

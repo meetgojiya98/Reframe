@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth-server";
+import { withApiHandler, parseAndValidate, validationErrorResponse } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { dailyCheckins } from "@/lib/db/schema";
+import { checkinPostSchema } from "@/lib/validations";
 
-export async function GET() {
+export const GET = withApiHandler(async () => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -24,18 +26,16 @@ export async function GET() {
       createdAt: r.createdAt.toISOString()
     }))
   );
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request) => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
+  const [body, err] = await parseAndValidate(request, checkinPostSchema);
+  if (err) return err;
+
   const id = body.id ?? `checkin_${crypto.randomUUID()}`;
-  const dateISO = body.dateISO as string;
-  const mood0to10 = Number(body.mood0to10);
-  const energy0to10 = Number(body.energy0to10);
-  const note = body.note as string | undefined;
   const createdAt = body.createdAt ? new Date(body.createdAt) : new Date();
 
   await db
@@ -43,16 +43,16 @@ export async function POST(request: Request) {
     .values({
       id,
       userId,
-      dateISO,
-      mood0to10,
-      energy0to10,
-      note: note ?? null,
+      dateISO: body.dateISO,
+      mood0to10: body.mood0to10,
+      energy0to10: body.energy0to10,
+      note: body.note ?? null,
       createdAt
     })
     .onConflictDoUpdate({
       target: dailyCheckins.id,
-      set: { mood0to10, energy0to10, note: note ?? null }
+      set: { mood0to10: body.mood0to10, energy0to10: body.energy0to10, note: body.note ?? null }
     });
 
   return NextResponse.json({ ok: true });
-}
+});

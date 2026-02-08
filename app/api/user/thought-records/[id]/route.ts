@@ -1,73 +1,88 @@
 import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth-server";
+import { withApiHandler, parseAndValidate } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { thoughtRecords } from "@/lib/db/schema";
+import { thoughtRecordPutSchema } from "@/lib/validations";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: { id: string } }
-) {
-  const userId = await getCurrentUserId();
-  if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const GET = withApiHandler(
+  async (_request, context) => {
+    const userId = await getCurrentUserId();
+    if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const id = context?.params?.id;
+    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  const [row] = await db
-    .select()
-    .from(thoughtRecords)
-    .where(and(eq(thoughtRecords.id, params.id), eq(thoughtRecords.userId, userId)))
-    .limit(1);
+    const [row] = await db
+      .select()
+      .from(thoughtRecords)
+      .where(and(eq(thoughtRecords.id, id), eq(thoughtRecords.userId, userId)))
+      .limit(1);
 
-  if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json({
-    id: row.id,
-    createdAt: row.createdAt.toISOString(),
-    situation: row.situation,
-    thoughts: row.thoughts,
-    emotions: row.emotions ?? [],
-    distortions: row.distortions ?? [],
-    evidenceFor: row.evidenceFor,
-    evidenceAgainst: row.evidenceAgainst,
-    reframe: row.reframe,
-    actionStep: row.actionStep
-  });
-}
+    return NextResponse.json({
+      id: row.id,
+      createdAt: row.createdAt.toISOString(),
+      situation: row.situation,
+      thoughts: row.thoughts,
+      emotions: row.emotions ?? [],
+      distortions: row.distortions ?? [],
+      evidenceFor: row.evidenceFor,
+      evidenceAgainst: row.evidenceAgainst,
+      reframe: row.reframe,
+      actionStep: row.actionStep
+    });
+  }
+);
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const userId = await getCurrentUserId();
-  if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export const PUT = withApiHandler(
+  async (request, context) => {
+    const userId = await getCurrentUserId();
+    if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const id = context?.params?.id;
+    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  const body = await request.json();
-  await db
-    .update(thoughtRecords)
-    .set({
-      situation: body.situation ?? "",
-      thoughts: body.thoughts ?? "",
-      emotions: Array.isArray(body.emotions) ? body.emotions : [],
-      distortions: Array.isArray(body.distortions) ? body.distortions : [],
-      evidenceFor: body.evidenceFor ?? "",
-      evidenceAgainst: body.evidenceAgainst ?? "",
-      reframe: body.reframe ?? "",
-      actionStep: body.actionStep ?? ""
-    })
-    .where(and(eq(thoughtRecords.id, params.id), eq(thoughtRecords.userId, userId)));
+    const [body, err] = await parseAndValidate(request, thoughtRecordPutSchema);
+    if (err) return err;
 
-  return NextResponse.json({ ok: true });
-}
+    const [existing] = await db
+      .select()
+      .from(thoughtRecords)
+      .where(and(eq(thoughtRecords.id, id), eq(thoughtRecords.userId, userId)))
+      .limit(1);
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
-) {
-  const userId = await getCurrentUserId();
-  if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  await db
-    .delete(thoughtRecords)
-    .where(and(eq(thoughtRecords.id, params.id), eq(thoughtRecords.userId, userId)));
+    await db
+      .update(thoughtRecords)
+      .set({
+        situation: body.situation ?? existing.situation,
+        thoughts: body.thoughts ?? existing.thoughts,
+        emotions: body.emotions ?? existing.emotions ?? [],
+        distortions: body.distortions ?? existing.distortions ?? [],
+        evidenceFor: body.evidenceFor ?? existing.evidenceFor,
+        evidenceAgainst: body.evidenceAgainst ?? existing.evidenceAgainst,
+        reframe: body.reframe ?? existing.reframe,
+        actionStep: body.actionStep ?? existing.actionStep
+      })
+      .where(and(eq(thoughtRecords.id, id), eq(thoughtRecords.userId, userId)));
 
-  return NextResponse.json({ ok: true });
-}
+    return NextResponse.json({ ok: true });
+  }
+);
+
+export const DELETE = withApiHandler(
+  async (_request, context) => {
+    const userId = await getCurrentUserId();
+    if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const id = context?.params?.id;
+    if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+    await db
+      .delete(thoughtRecords)
+      .where(and(eq(thoughtRecords.id, id), eq(thoughtRecords.userId, userId)));
+
+    return NextResponse.json({ ok: true });
+  }
+);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { COMMON_EMOTIONS, DISTORTION_DEFINITIONS } from "@/lib/constants";
 import { detectHighRiskText } from "@/lib/safety";
@@ -20,6 +21,9 @@ type ThoughtRecordFormData = Omit<ThoughtRecord, "id" | "createdAt">;
 type ThoughtRecordFormProps = {
   profile?: Profile;
   initialValue?: ThoughtRecord;
+  /** When creating a new record, optionally pre-fill from a template or duplicate. */
+  initialSituation?: string;
+  initialThoughts?: string;
   onSave: (payload: ThoughtRecord) => Promise<void>;
 };
 
@@ -46,7 +50,7 @@ const DEFAULT_DATA: ThoughtRecordFormData = {
 
 const assistCache = new Map<string, unknown>();
 
-export function ThoughtRecordForm({ profile, initialValue, onSave }: ThoughtRecordFormProps) {
+export function ThoughtRecordForm({ profile, initialValue, initialSituation, initialThoughts, onSave }: ThoughtRecordFormProps) {
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [loadingAssist, setLoadingAssist] = useState<string | null>(null);
@@ -63,7 +67,9 @@ export function ThoughtRecordForm({ profile, initialValue, onSave }: ThoughtReco
           reframe: initialValue.reframe,
           actionStep: initialValue.actionStep
         }
-      : DEFAULT_DATA
+      : initialSituation != null || initialThoughts != null
+        ? { ...DEFAULT_DATA, situation: initialSituation ?? "", thoughts: initialThoughts ?? "" }
+        : DEFAULT_DATA
   );
 
   const aiEnabled = Boolean(profile?.aiEnabled);
@@ -218,7 +224,7 @@ export function ThoughtRecordForm({ profile, initialValue, onSave }: ThoughtReco
     toast.success("Balanced reframe suggestion added.");
   };
 
-  const submit = async () => {
+  const submit = useCallback(async () => {
     const combinedText = [
       data.situation,
       data.thoughts,
@@ -252,7 +258,18 @@ export function ThoughtRecordForm({ profile, initialValue, onSave }: ThoughtReco
     } finally {
       setSaving(false);
     }
-  };
+  }, [data, initialValue, onSave]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && step === STEPS.length) {
+        e.preventDefault();
+        if (!saving) submit();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [step, saving, submit]);
 
   const stepBody = (
     <AnimatePresence mode="wait">
@@ -442,6 +459,7 @@ export function ThoughtRecordForm({ profile, initialValue, onSave }: ThoughtReco
           </Badge>
         </CardTitle>
         <CardDescription>{STEPS[step - 1]}</CardDescription>
+        <Progress value={(step / STEPS.length) * 100} className="mt-3 h-2" />
       </CardHeader>
       <CardContent className="space-y-5">
         {stepBody}
@@ -456,9 +474,12 @@ export function ThoughtRecordForm({ profile, initialValue, onSave }: ThoughtReco
                 Next
               </Button>
             ) : (
-              <Button disabled={saving} onClick={submit} type="button">
-                {saving ? "Saving..." : "Save thought record"}
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                <Button disabled={saving} onClick={submit} type="button">
+                  {saving ? "Saving..." : "Save thought record"}
+                </Button>
+                <p className="text-[11px] text-muted-foreground">Ctrl+Enter to save</p>
+              </div>
             )}
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { withApiHandler, parseAndValidate } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { users, profile } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -11,7 +12,7 @@ const signUpSchema = z.object({
   name: z.string().max(255).optional()
 });
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request) => {
   if (!db) {
     return NextResponse.json(
       { error: "Database not configured" },
@@ -19,37 +20,40 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = await request.json();
-  const parsed = signUpSchema.safeParse(body);
-  if (!parsed.success) {
+  const [body, validationErr] = await parseAndValidate(request, signUpSchema);
+  if (validationErr) return validationErr;
+
+  const { email, password, name } = body;
+
+  try {
+    const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (existing) {
+      return NextResponse.json(
+        { error: "An account with this email already exists" },
+        { status: 409 }
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const id = crypto.randomUUID();
+    await db.insert(users).values({
+      id,
+      email,
+      passwordHash,
+      name: name ?? null,
+    });
+
+    await db.insert(profile).values({
+      userId: id,
+      displayName: name ?? "Friend",
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Database error";
     return NextResponse.json(
-      { error: parsed.error.flatten().fieldErrors },
-      { status: 400 }
+      { error: message },
+      { status: 500 }
     );
   }
-
-  const { email, password, name } = parsed.data;
-  const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  if (existing) {
-    return NextResponse.json(
-      { error: "An account with this email already exists" },
-      { status: 409 }
-    );
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const id = crypto.randomUUID();
-  await db.insert(users).values({
-    id,
-    email,
-    passwordHash,
-    name: name ?? null,
-  });
-
-  await db.insert(profile).values({
-    userId: id,
-    displayName: name ?? "Friend",
-  });
-
-  return NextResponse.json({ ok: true });
-}
+});

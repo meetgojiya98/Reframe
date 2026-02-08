@@ -11,7 +11,10 @@ export type AchievementId =
   | "first_skill"
   | "skills_5"
   | "week_complete"
-  | "gratitude";
+  | "gratitude"
+  | "anchor_saved"
+  | "reflection_saved"
+  | "looking_forward_saved";
 
 export interface AchievementDef {
   id: AchievementId;
@@ -28,6 +31,9 @@ export interface AchievementContext {
   streak: number;
   savedInsightCount: number;
   gratitudeCount: number;
+  anchorCount: number;
+  reflectionCount: number;
+  lookingForwardCount: number;
 }
 
 const ACHIEVEMENT_DEFS: AchievementDef[] = [
@@ -107,6 +113,27 @@ const ACHIEVEMENT_DEFS: AchievementDef[] = [
     description: "Saved a gratitude or win",
     icon: "🙏",
     check: (ctx) => ctx.gratitudeCount >= 1
+  },
+  {
+    id: "anchor_saved",
+    title: "Anchored",
+    description: "Saved today's anchor phrase",
+    icon: "⚓",
+    check: (ctx) => ctx.anchorCount >= 1
+  },
+  {
+    id: "reflection_saved",
+    title: "Reflector",
+    description: "Saved an evening reflection",
+    icon: "🌙",
+    check: (ctx) => ctx.reflectionCount >= 1
+  },
+  {
+    id: "looking_forward_saved",
+    title: "Looking ahead",
+    description: "Saved something you're looking forward to",
+    icon: "🌅",
+    check: (ctx) => ctx.lookingForwardCount >= 1
   }
 ];
 
@@ -117,4 +144,63 @@ export function getUnlockedAchievements(ctx: AchievementContext): AchievementDef
 export function getAchievementProgress(ctx: AchievementContext): { unlocked: number; total: number } {
   const unlocked = ACHIEVEMENT_DEFS.filter((def) => def.check(ctx)).length;
   return { unlocked, total: ACHIEVEMENT_DEFS.length };
+}
+
+/** Progress toward an achievement: current value and target. Used for "nearly there" UI. */
+export function getAchievementProgressDetail(
+  def: AchievementDef,
+  ctx: AchievementContext
+): { current: number; target: number; label: string } | null {
+  const targets: Record<AchievementId, { getCurrent: (c: AchievementContext) => number; target: number; label: string }> = {
+    first_checkin: { getCurrent: (c) => c.checkins.length, target: 1, label: "check-ins" },
+    streak_3: { getCurrent: (c) => c.streak, target: 3, label: "day streak" },
+    streak_7: { getCurrent: (c) => c.streak, target: 7, label: "day streak" },
+    streak_14: { getCurrent: (c) => c.streak, target: 14, label: "day streak" },
+    first_thought_record: { getCurrent: (c) => c.thoughtRecordCount, target: 1, label: "thought records" },
+    thought_records_5: { getCurrent: (c) => c.thoughtRecordCount, target: 5, label: "thought records" },
+    thought_records_10: { getCurrent: (c) => c.thoughtRecordCount, target: 10, label: "thought records" },
+    first_skill: { getCurrent: (c) => c.skillCompletionCount, target: 1, label: "skills" },
+    skills_5: { getCurrent: (c) => c.skillCompletionCount, target: 5, label: "skills" },
+    week_complete: { getCurrent: (c) => c.streak, target: 7, label: "day streak" },
+    gratitude: { getCurrent: (c) => c.gratitudeCount, target: 1, label: "gratitude or win" },
+    anchor_saved: { getCurrent: (c) => c.anchorCount, target: 1, label: "anchor saved" },
+    reflection_saved: { getCurrent: (c) => c.reflectionCount, target: 1, label: "reflection" },
+    looking_forward_saved: { getCurrent: (c) => c.lookingForwardCount, target: 1, label: "looking forward" }
+  };
+  const t = targets[def.id];
+  if (!t) return null;
+  const current = Math.min(t.getCurrent(ctx), t.target);
+  return { current, target: t.target, label: t.label };
+}
+
+/** Unlocked achievements are excluded. Sorted by progress (closest to target first). */
+export function getNearlyThereAchievements(ctx: AchievementContext, limit = 3): Array<AchievementDef & { current: number; target: number; label: string }> {
+  const unlockedIds = new Set(getUnlockedAchievements(ctx).map((a) => a.id));
+  const withProgress = ACHIEVEMENT_DEFS.filter((d) => !unlockedIds.has(d.id))
+    .map((def) => {
+      const p = getAchievementProgressDetail(def, ctx);
+      if (!p) return null;
+      return { ...def, ...p };
+    })
+    .filter((x): x is NonNullable<typeof x> => x != null)
+    .sort((a, b) => b.current / b.target - a.current / a.target);
+  return withProgress.slice(0, limit);
+}
+
+/** All achievements with unlocked flag and progress (for full achievements page). */
+export function getAllAchievementsWithProgress(
+  ctx: AchievementContext
+): Array<AchievementDef & { unlocked: boolean; current: number; target: number; label: string }> {
+  const unlockedIds = new Set(getUnlockedAchievements(ctx).map((a) => a.id));
+  return ACHIEVEMENT_DEFS.map((def) => {
+    const p = getAchievementProgressDetail(def, ctx);
+    const unlocked = unlockedIds.has(def.id);
+    return {
+      ...def,
+      unlocked,
+      current: p?.current ?? 0,
+      target: p?.target ?? 1,
+      label: p?.label ?? ""
+    };
+  });
 }

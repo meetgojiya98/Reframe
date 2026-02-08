@@ -1,10 +1,11 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { NextResponse } from "next/server";
-import { BASE_SYSTEM_PROMPT, modePrompt } from "@/lib/prompts";
 import { buildSafeResponse, detectHighRiskFromMessages } from "@/lib/safety";
+import { withApiHandler } from "@/lib/api-handler";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
-import { CoachMode, SafetyCategory } from "@/lib/types";
+import { SafetyCategory } from "@/lib/types";
+import { runCoach, isAIAvailable } from "@/lib/ai";
 
 export const runtime = "nodejs";
 
@@ -31,35 +32,10 @@ const RequestSchema = z.object({
     .object({
       model: z.string().max(80).optional(),
       temperature: z.number().min(0).max(1).optional(),
-      maxTokens: z.number().int().min(64).max(450).optional()
+      maxTokens: z.number().int().min(64).max(520).optional()
     })
     .optional()
 });
-
-function extractModeCategory(mode: CoachMode) {
-  if (mode === "coach") return "coach";
-  if (mode === "distortions") return "distortion assist";
-  if (mode === "socratic") return "Socratic questions";
-  return "balanced reframe";
-}
-
-function parseJsonOutput(raw: string) {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return { message: raw };
-  }
-}
-
-function toShortText(value: unknown, fallback = "", max = 220) {
-  if (typeof value !== "string") return fallback;
-  return value.replace(/\s+/g, " ").trim().slice(0, max);
-}
-
-function truncateWords(input: string, maxWords: number) {
-  const words = input.trim().split(/\s+/).filter(Boolean);
-  return words.slice(0, maxWords).join(" ");
-}
 
 function moderationCategoryFromResult(result: Record<string, boolean>): SafetyCategory | null {
   if (result["self-harm"] || result["self-harm/intent"] || result["self-harm/instructions"]) {
@@ -83,7 +59,7 @@ async function optionalModerationCheck(openai: OpenAI | null, input: string) {
     const result = moderation.results[0];
     if (!result?.flagged) return null;
 
-    return moderationCategoryFromResult(result.categories as Record<string, boolean>) ?? "other";
+    return moderationCategoryFromResult(result.categories as unknown as Record<string, boolean>) ?? "other";
   } catch {
     return null;
   }
@@ -100,13 +76,13 @@ function botProtectionPass(headers: Headers) {
   return provided === expected;
 }
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request: Request) => {
   if (!botProtectionPass(request.headers)) {
     return NextResponse.json({ error: "Bot protection check failed." }, { status: 403 });
   }
 
   const clientIp = getClientIp(request.headers);
-  const rate = checkRateLimit(clientIp);
+  const rate = await checkRateLimit(clientIp);
 
   if (!rate.allowed) {
     return NextResponse.json(
@@ -155,87 +131,35 @@ export async function POST(request: Request) {
     });
   }
 
-  if (!openai) {
+  if (!isAIAvailable()) {
     return NextResponse.json(
       { error: "OpenAI is not configured. Add OPENAI_API_KEY to enable AI Coach." },
       { status: 503 }
     );
   }
 
-  const model = parsedBody.settings?.model || process.env.OPENAI_MODEL || "gpt-4o-mini";
-  const temperature = parsedBody.settings?.temperature ?? 0.5;
-  const maxTokens = parsedBody.settings?.maxTokens ?? 450;
-
-  const systemPrompt = `${BASE_SYSTEM_PROMPT}\nTask category: ${extractModeCategory(parsedBody.mode)}.`;
-  const modeSpecificPrompt = modePrompt(parsedBody.mode, parsedBody);
-
   try {
-    const completion = await openai.chat.completions.create({
-      model,
-      temperature,
-      max_tokens: Math.min(maxTokens, 450),
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "system", content: modeSpecificPrompt },
-        ...parsedBody.messages
-      ]
-    });
-
-    const modelText = completion.choices[0]?.message?.content ?? "";
-
-    if (!modelText) {
-      return NextResponse.json({ error: "Empty response from model." }, { status: 502 });
-    }
-
-    const parsedOutput = parseJsonOutput(modelText);
+    const result = await runCoach(parsedBody);
 
     if (parsedBody.mode === "coach") {
-      const message = typeof parsedOutput.message === "string" ? parsedOutput.message : modelText;
       return NextResponse.json({
-        message: message.slice(0, 450),
-        toolSuggestion: parsedOutput.toolSuggestion
+        message: result.message ?? "",
+        toolSuggestion: result.toolSuggestion
       });
     }
 
     if (parsedBody.mode === "distortions") {
-      const rawItems = Array.isArray(parsedOutput.items) ? parsedOutput.items : [];
-      const items = rawItems.slice(0, 4).map((item) => ({
-        distortion: toShortText(item?.distortion, "Possible pattern", 80),
-        reason: toShortText(item?.reason, "May match the thought pattern.", 160)
-      }));
-      return NextResponse.json({ message: { items } });
+      return NextResponse.json({ message: { items: result.items ?? [] } });
     }
 
     if (parsedBody.mode === "socratic") {
-      const rawQuestions = Array.isArray(parsedOutput.questions) ? parsedOutput.questions : [];
-      let questions = rawQuestions
-        .map((question) => truncateWords(toShortText(question, "", 180), 16))
-        .filter(Boolean)
-        .slice(0, 8);
-
-      if (questions.length < 5) {
-        questions = [
-          "What evidence supports this thought?",
-          "What evidence challenges this thought?",
-          "What would I tell a close friend?",
-          "Is there a more balanced way to view this?",
-          "What is one helpful step right now?"
-        ];
-      }
-
-      return NextResponse.json({ message: { questions } });
+      return NextResponse.json({ message: { questions: result.questions ?? [] } });
     }
-
-    const rawThoughts = Array.isArray(parsedOutput.balancedThoughts) ? parsedOutput.balancedThoughts : [];
-    const balancedThoughts = rawThoughts
-      .map((thought) => toShortText(thought, "", 200))
-      .filter(Boolean)
-      .slice(0, 3);
 
     return NextResponse.json({
       message: {
-        balancedThoughts: balancedThoughts.length ? balancedThoughts : ["A more balanced view may be available."],
-        actionStep: toShortText(parsedOutput.actionStep, "Take one small step in the next 10 minutes.", 160)
+        balancedThoughts: result.balancedThoughts ?? ["A more balanced view may be available."],
+        actionStep: result.actionStep ?? "Take one small step in the next 10 minutes."
       }
     });
   } catch {
@@ -244,4 +168,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

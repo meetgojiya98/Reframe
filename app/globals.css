@@ -3,65 +3,112 @@
 @tailwind utilities;
 
 :root {
-  --background: 40 20% 98%;
-  --foreground: 220 20% 14%;
-  --muted: 40 15% 94%;
-  --muted-foreground: 220 10% 42%;
+  /* Premium palette: warm paper base, deep teal primary (editorial, not startup) */
+  --background: 42 22% 97%;
+  --foreground: 220 20% 10%;
+  --muted: 40 14% 94%;
+  --muted-foreground: 220 12% 40%;
   --popover: 0 0% 100%;
-  --popover-foreground: 220 20% 14%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 20% 14%;
-  --border: 40 12% 90%;
-  --input: 40 12% 90%;
-  --primary: 168 52% 38%;
+  --popover-foreground: 220 20% 10%;
+  --card: 40 18% 99%;
+  --card-foreground: 220 20% 10%;
+  --border: 220 10% 88%;
+  --input: 220 10% 91%;
+  --primary: 168 52% 32%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 40 20% 94%;
-  --secondary-foreground: 220 20% 14%;
-  --accent: 168 35% 94%;
-  --accent-foreground: 168 52% 28%;
-  --destructive: 0 72% 48%;
+  --secondary: 220 12% 95%;
+  --secondary-foreground: 220 20% 10%;
+  --accent: 168 35% 93%;
+  --accent-foreground: 168 45% 22%;
+  --destructive: 0 60% 42%;
   --destructive-foreground: 0 0% 100%;
-  --ring: 168 52% 38%;
-  --radius: 1rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.5rem;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.1);
-  --gradient-start: 168 52% 45%;
-  --gradient-mid: 160 60% 50%;
-  --gradient-end: 145 50% 42%;
+  --ring: 168 52% 32%;
+  --radius: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  /* Tinted elevation: subtle teal cast so shadows feel part of the brand */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(20, 80, 70, 0.04);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 2px 12px rgba(20, 80, 70, 0.05);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(20, 80, 70, 0.06);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(20, 80, 70, 0.07);
+  --gradient-start: 168 52% 38%;
+  --gradient-mid: 162 50% 42%;
+  --gradient-end: 156 48% 36%;
+  --space-page-x: 1.5rem;
+  --space-section: 2rem;
+  --header-height: 3.5rem;
+}
+
+.dark {
+  --background: 222 18% 9%;
+  --foreground: 40 12% 96%;
+  --muted: 220 14% 14%;
+  --muted-foreground: 220 10% 58%;
+  --popover: 222 18% 11%;
+  --popover-foreground: 40 12% 96%;
+  --card: 222 16% 11%;
+  --card-foreground: 40 12% 96%;
+  --border: 220 12% 20%;
+  --input: 220 12% 18%;
+  --primary: 168 52% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 12% 18%;
+  --secondary-foreground: 40 12% 96%;
+  --accent: 168 40% 22%;
+  --accent-foreground: 168 45% 92%;
+  --destructive: 0 65% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 168 52% 42%;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 * {
   @apply border-border;
 }
 
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
 html {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
+  scroll-behavior: smooth;
 }
 
 body {
-  @apply bg-background text-foreground antialiased;
-  font-feature-settings: "rlig" 1, "calt" 1;
+  @apply text-foreground antialiased;
+  background: transparent;
+  font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   min-height: 100dvh;
-  background-image:
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(72, 187, 120, 0.15), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 100% 50%, rgba(72, 187, 120, 0.08), transparent 45%),
-    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(72, 187, 120, 0.1), transparent 40%);
+  padding-left: var(--safe-area-inset-left);
+  padding-right: var(--safe-area-inset-right);
+  letter-spacing: 0.012em;
+  line-height: 1.55;
 }
 
-/* Mobile: avoid iOS zoom on focus (inputs need min 16px) */
 @media (max-width: 768px) {
   input, select, textarea {
     font-size: 16px !important;
   }
 }
 
-/* Touch-friendly range thumbs (min 44px tap target) */
+@media (pointer: coarse) {
+  button:not([data-no-touch]), a:not([data-no-touch]), [role="button"]:not([data-no-touch]) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -99,16 +146,38 @@ input[type="range"]::-moz-range-thumb {
     background-clip: text;
   }
   .glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
   .card-hover {
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
   }
   .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-md);
+  }
+  .card-elevated {
+    box-shadow: var(--shadow), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
+  .card-elevated:hover {
+    box-shadow: var(--shadow-md), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
+  .text-display {
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .text-heading {
+    font-family: var(--font-fraunces), Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+  .stat-value {
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -148,4 +217,35 @@ input[type="range"]::-moz-range-thumb {
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient-shift 6s ease infinite;
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(4px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes gauge-fill {
+  from { stroke-dashoffset: var(--gauge-circum); }
+  to { stroke-dashoffset: var(--gauge-offset); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.animate-count-up {
+  animation: count-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 1.5s ease-in-out infinite;
+}
+
+.overflow-x-hidden {
+  overflow-x: hidden;
+}
+
+.pb-safe-nav {
+  padding-bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem));
 }

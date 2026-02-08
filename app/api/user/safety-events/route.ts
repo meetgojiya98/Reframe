@@ -1,25 +1,27 @@
 import { NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/auth-server";
+import { withApiHandler, parseAndValidate } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { safetyEvents } from "@/lib/db/schema";
+import { safetyEventPostSchema } from "@/lib/validations";
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request) => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
+  const [body, err] = await parseAndValidate(request, safetyEventPostSchema);
+  if (err) return err;
+
   const id = body.id ?? `safety_${crypto.randomUUID()}`;
-  const category = (body.category as string) ?? "other";
-  const source = (body.source as string) ?? "coach";
   const createdAt = body.createdAt ? new Date(body.createdAt) : new Date();
 
   await db.insert(safetyEvents).values({
     id,
     userId,
-    category,
-    source,
+    category: body.category,
+    source: body.source,
     createdAt
   });
 
   return NextResponse.json({ ok: true });
-}
+});

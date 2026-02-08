@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth-server";
+import { withApiHandler } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import {
   profile as profileTable,
@@ -11,7 +12,7 @@ import {
   savedInsights
 } from "@/lib/db/schema";
 
-export async function GET() {
+export const GET = withApiHandler(async () => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -75,4 +76,4 @@ export async function GET() {
   };
 
   return NextResponse.json(data);
-}
+});

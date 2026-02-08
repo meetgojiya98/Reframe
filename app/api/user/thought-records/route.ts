@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth-server";
+import { withApiHandler, parseAndValidate } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { thoughtRecords } from "@/lib/db/schema";
+import { thoughtRecordPostSchema } from "@/lib/validations";
 
-export async function GET() {
+export const GET = withApiHandler(async () => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -28,29 +30,31 @@ export async function GET() {
       actionStep: r.actionStep
     }))
   );
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request) => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
+  const [body, err] = await parseAndValidate(request, thoughtRecordPostSchema);
+  if (err) return err;
+
   const id = body.id ?? `thought_${crypto.randomUUID()}`;
   const createdAt = body.createdAt ? new Date(body.createdAt) : new Date();
 
   await db.insert(thoughtRecords).values({
     id,
     userId,
-    situation: body.situation ?? "",
-    thoughts: body.thoughts ?? "",
-    emotions: Array.isArray(body.emotions) ? body.emotions : [],
-    distortions: Array.isArray(body.distortions) ? body.distortions : [],
-    evidenceFor: body.evidenceFor ?? "",
-    evidenceAgainst: body.evidenceAgainst ?? "",
-    reframe: body.reframe ?? "",
-    actionStep: body.actionStep ?? "",
+    situation: body.situation,
+    thoughts: body.thoughts,
+    emotions: body.emotions,
+    distortions: body.distortions,
+    evidenceFor: body.evidenceFor,
+    evidenceAgainst: body.evidenceAgainst,
+    reframe: body.reframe,
+    actionStep: body.actionStep,
     createdAt
   });
 
   return NextResponse.json({ ok: true, id });
-}
+});

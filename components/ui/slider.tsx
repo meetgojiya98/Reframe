@@ -10,7 +10,7 @@ type SliderProps = {
   value: number;
   onValueChange: (value: number) => void;
   className?: string;
-  label: string;
+  label?: string;
 };
 
 export function Slider({
@@ -26,12 +26,14 @@ export function Slider({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="flex items-center justify-between text-sm">
-        <span>{label}</span>
-        <span className="font-semibold">{value}</span>
-      </div>
+      {label ? (
+        <div className="flex items-center justify-between text-sm">
+          <span>{label}</span>
+          <span className="font-semibold">{value}</span>
+        </div>
+      ) : null}
       <input
-        aria-label={label}
+        aria-label={label ?? "Slider"}
         className="h-2 w-full cursor-pointer appearance-none rounded-full bg-secondary"
         max={max}
         min={min}

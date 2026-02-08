@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth-server";
+import { withApiHandler, parseAndValidate } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { savedInsights } from "@/lib/db/schema";
+import { savedInsightPostSchema } from "@/lib/validations";
 
-export async function GET() {
+export const GET = withApiHandler(async () => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -22,23 +24,24 @@ export async function GET() {
       note: r.note
     }))
   );
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request) => {
   const userId = await getCurrentUserId();
   if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
+  const [body, err] = await parseAndValidate(request, savedInsightPostSchema);
+  if (err) return err;
+
   const id = body.id ?? `insight_${crypto.randomUUID()}`;
-  const note = (body.note as string)?.slice(0, 280) ?? "";
   const createdAt = body.createdAt ? new Date(body.createdAt) : new Date();
 
   await db.insert(savedInsights).values({
     id,
     userId,
-    note,
+    note: body.note,
     createdAt
   });
 
   return NextResponse.json({ ok: true, id });
-}
+});
