@@ -88,7 +88,7 @@ export async function runCoach(
   request: CoachRequest,
   options?: { userId?: string | null }
 ): Promise<CoachRunResult> {
-  const { mode, messages, context, settings } = request;
+  const { mode, messages, settings } = request;
   const schema = COACH_MODE_SCHEMAS[mode];
   const systemPrompt = `${BASE_SYSTEM_PROMPT}\nTask category: ${extractModeCategory(mode)}.`;
   const modeSpecificPrompt = modePrompt(mode, request);

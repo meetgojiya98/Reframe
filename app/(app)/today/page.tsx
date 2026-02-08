@@ -21,7 +21,6 @@ import {
   Shield,
   Bookmark
 } from "lucide-react";
-import { PageHeader } from "@/components/layout/page-header";
 import { CheckinReminderBanner } from "@/components/checkin-reminder-banner";
 import { QuickGroundingWidget } from "@/components/quick-grounding-widget";
 import { TodaysAnchor } from "@/components/todays-anchor";
@@ -132,7 +131,7 @@ export default function TodayPage() {
     dailyTip: string;
     suggestedActions: Array<{ title: string; description: string; href: string }>;
   } | null>(null);
-  const [aiSuggestionsLoading, setAiSuggestionsLoading] = useState(false);
+  const [, setAiSuggestionsLoading] = useState(false);
 
   useEffect(() => {
     if (!existingToday?.note) {
@@ -166,7 +165,7 @@ export default function TodayPage() {
       .then(setAiSuggestions)
       .catch(() => setAiSuggestions(null))
       .finally(() => setAiSuggestionsLoading(false));
-  }, [profile?.aiEnabled, profile?.goals]);
+  }, [profile?.aiEnabled, profile?.goals, existingToday?.mood0to10, existingToday?.energy0to10, mood, energy, intention, thoughtRecords?.length, skillCompletions?.length]);
 
   const streak = useMemo(() => calculateGentleStreak(checkins), [checkins]);
 

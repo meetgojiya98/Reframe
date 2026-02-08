@@ -33,7 +33,7 @@ export default function SignUpPage() {
         return;
       }
       router.push("/login?callbackUrl=/today");
-    } catch (_err) {
+    } catch {
       setError("Network error. Check the dev server is running and try again.");
     } finally {
       setLoading(false);

@@ -29,6 +29,7 @@ export function AnimatedCounter({ value, duration = 0.5, className = "", suffix 
     };
     rafRef.current = requestAnimationFrame(step);
     return cancel;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- display is derived from value, adding it would loop
   }, [value, duration]);
 
   return (

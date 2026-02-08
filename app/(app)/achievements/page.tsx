@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Trophy, ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   useCheckins,
   useThoughtRecords,

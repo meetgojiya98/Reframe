@@ -103,7 +103,7 @@ export default function SkillsPage() {
     })
       .then((r) => setAiRecommendedIds(r.skillIds))
       .catch(() => setAiRecommendedIds(null));
-  }, [profile?.aiEnabled, profile?.goals, checkins?.length]);
+  }, [profile?.aiEnabled, profile?.goals, checkins]);
 
   const recommended = useMemo(() => {
     if (aiRecommendedIds?.length) {

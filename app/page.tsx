@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Lock, ShieldCheck, Sparkles, BarChart3, MessageCircle, Zap, Calendar, FileEdit, Wind, Bot, TrendingUp } from "lucide-react";
-import { APP_NAME, APP_TAGLINE, DISCLAIMER_LINES } from "@/lib/constants";
+import { APP_TAGLINE, DISCLAIMER_LINES } from "@/lib/constants";
 import { ReframeLogo } from "@/components/reframe-logo";
 import { Button } from "@/components/ui/button";
 

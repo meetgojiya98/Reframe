@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { getCurrentUserId } from "@/lib/auth-server";
-import { withApiHandler, parseAndValidate, validationErrorResponse } from "@/lib/api-handler";
+import { withApiHandler, parseAndValidate } from "@/lib/api-handler";
 import { db } from "@/lib/db";
 import { dailyCheckins } from "@/lib/db/schema";
 import { checkinPostSchema } from "@/lib/validations";

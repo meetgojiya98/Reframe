@@ -1,5 +1,20 @@
 # Deploy Reframe on Vercel (with accounts)
 
+## Quick start: host on Vercel
+
+1. **Push your code** to GitHub (e.g. `meetgojiya98/Reframe`).
+2. Go to **[vercel.com](https://vercel.com)** → **Add New** → **Project**.
+3. **Import** your GitHub repo `Reframe`. Leave build settings as default (Next.js is auto-detected).
+4. **Environment variables**: before deploying, add at least:
+   - `POSTGRES_URL` — your Supabase/Neon/Postgres connection string.
+   - `NEXTAUTH_SECRET` — run `openssl rand -base64 32` and paste the result.
+   - `NEXTAUTH_URL` — leave empty on first deploy; Vercel will use the deployment URL. After first deploy, set it to `https://<your-project>.vercel.app` (or use **Settings → Domains** to see the URL).
+   - `OPENAI_API_KEY` — (optional) for Coach and AI features.
+5. Click **Deploy**. After the first deploy, set `NEXTAUTH_URL` to your live URL and redeploy if needed.
+6. **Database schema**: run `npm run db:push` once locally with `POSTGRES_URL` pointing to your production DB (or use the same URL from Vercel env) so tables exist.
+
+---
+
 ## 1. Database
 
 Create a Postgres database:

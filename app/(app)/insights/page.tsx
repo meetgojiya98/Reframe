@@ -166,7 +166,6 @@ export default function InsightsPage() {
   }, [filteredCheckins]);
 
   const skillMoodCorrelation = useMemo(() => {
-    const checkinByDate = new Map(filteredCheckins.map((item) => [item.dateISO, item]));
     const skillDates = new Set(
       skillCompletions
         .filter((entry) => new Date(entry.createdAt) >= cutoff)

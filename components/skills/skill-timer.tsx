@@ -11,8 +11,6 @@ type SkillTimerProps = {
   breathingMode?: boolean;
 };
 
-const BREATH_CYCLE_SEC = 16; // 4 in, 4 hold, 4 out, 4 hold
-
 export function SkillTimer({ minutes, breathingMode = false }: SkillTimerProps) {
   const totalSeconds = useMemo(() => minutes * 60, [minutes]);
   const [remaining, setRemaining] = useState(totalSeconds);

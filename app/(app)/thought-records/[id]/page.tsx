@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { ThoughtRecordForm } from "@/components/thought-record/thought-record-form";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile, useThoughtRecord } from "@/hooks/use-user-data";
 import { apiThoughtRecordPut, apiThoughtRecordDelete } from "@/lib/api";
 import { ThoughtRecord } from "@/lib/types";
