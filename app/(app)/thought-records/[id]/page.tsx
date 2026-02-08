@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile, useThoughtRecord } from "@/hooks/use-user-data";
 import { apiThoughtRecordPut, apiThoughtRecordDelete } from "@/lib/api";
-import { ThoughtRecord, DistortionKey } from "@/lib/types";
+import { ThoughtRecord, DistortionKey, Profile } from "@/lib/types";
 import { DISTORTION_DEFINITIONS } from "@/lib/constants";
 
 export default function ThoughtRecordDetailPage() {
@@ -125,7 +125,7 @@ export default function ThoughtRecordDetailPage() {
           </CardContent>
         </Card>
       )}
-      <ThoughtRecordForm initialValue={record as ThoughtRecord} onSave={save} profile={profile} />
+      <ThoughtRecordForm initialValue={record as ThoughtRecord} onSave={save} profile={profile as Profile | undefined} />
     </div>
   );
 }
