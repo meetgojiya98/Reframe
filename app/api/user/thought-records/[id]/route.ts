@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { thoughtRecords } from "@/lib/db/schema";
 import { thoughtRecordPutSchema } from "@/lib/validations";
 
-export const GET = withApiHandler(
+export const GET = withApiHandler<{ id: string }>(
   async (_request, context) => {
     const userId = await getCurrentUserId();
     if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,7 +36,7 @@ export const GET = withApiHandler(
   }
 );
 
-export const PUT = withApiHandler(
+export const PUT = withApiHandler<{ id: string }>(
   async (request, context) => {
     const userId = await getCurrentUserId();
     if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -72,7 +72,7 @@ export const PUT = withApiHandler(
   }
 );
 
-export const DELETE = withApiHandler(
+export const DELETE = withApiHandler<{ id: string }>(
   async (_request, context) => {
     const userId = await getCurrentUserId();
     if (!userId || !db) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

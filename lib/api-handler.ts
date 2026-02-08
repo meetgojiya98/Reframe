@@ -18,8 +18,8 @@ export type ApiHandler<T = unknown> = (
  *     return NextResponse.json(data);
  *   });
  */
-export function withApiHandler(handler: ApiHandler): ApiHandler {
-  return async (request: Request, context?: { params?: unknown }) => {
+export function withApiHandler<T = unknown>(handler: ApiHandler<T>): ApiHandler<T> {
+  return async (request: Request, context?: { params?: T }) => {
     try {
       return await handler(request, context);
     } catch (err) {
