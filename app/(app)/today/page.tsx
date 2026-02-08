@@ -428,7 +428,7 @@ export default function TodayPage() {
             {profile?.displayName ? `Hi, ${profile.displayName}` : "Today"}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            {!existingToday && (() => {
+            {(!existingToday && (() => {
               const [h, m] = (profile?.preferredCheckinTime ?? "10:00").split(":").map(Number);
               const preferredMins = (h ?? 10) * 60 + (m ?? 0);
               const now = new Date();
@@ -436,7 +436,7 @@ export default function TodayPage() {
               if (currentMins >= preferredMins)
                 return "You haven't checked in today—when you're ready, a quick note helps.";
               return null;
-            })() ?? (profile?.preferredCheckinTime
+            })()) ?? (profile?.preferredCheckinTime
               ? `A short reflection helps. You asked for a reminder around ${profile.preferredCheckinTime}.`
               : "A short reflection can help you notice patterns and choose a kind next step.")}
           </p>
