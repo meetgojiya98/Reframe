@@ -12,7 +12,6 @@ if (process.env.VERCEL && process.env.VERCEL_URL && !process.env.NEXTAUTH_URL) {
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
-  trustHost: true, // Required for NextAuth behind Vercel's proxy; avoids "untrusted host" issues
   providers: [
     CredentialsProvider({
       name: "credentials",

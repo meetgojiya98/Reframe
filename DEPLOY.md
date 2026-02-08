@@ -76,7 +76,7 @@ Push to your Git repo; Vercel will build and deploy. After the first deploy, run
 | "Failed query" or "relation \"users\" does not exist" on sign up / sign in | The production database has no tables. Run `db:push` (see step 2) or use the SQL fallback below. |
 | `ENOTFOUND` or "Can't find db.xxx.supabase.co" when running `db:push` | Your network/DNS can't resolve Supabase's direct host. Use the **exact** connection URI from Supabase Dashboard → Settings → Database (Session or Transaction mode); newer projects may use a pooler host. Or apply the schema via SQL Editor (see below). |
 | "Invalid email or password" right after sign up | Sign up likely failed (e.g. schema missing). Fix the sign up error first, then sign in. |
-| Auth works locally but not on Vercel | Set `NEXTAUTH_URL` to your Vercel URL (e.g. `https://$VERCEL_URL`) and ensure `NEXTAUTH_SECRET` is set. |
+| Auth works locally but not on Vercel | Set `NEXTAUTH_URL` to your Vercel URL (e.g. `https://$VERCEL_URL`) and ensure `NEXTAUTH_SECRET` is set. If you see "untrusted host", add env var `AUTH_TRUST_HOST=true` in Vercel. |
 
 ### Schema via Supabase SQL Editor (when `db:push` fails locally)
 
