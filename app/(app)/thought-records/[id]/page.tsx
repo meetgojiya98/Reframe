@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProfile, useThoughtRecord } from "@/hooks/use-user-data";
 import { apiThoughtRecordPut, apiThoughtRecordDelete } from "@/lib/api";
-import { ThoughtRecord } from "@/lib/types";
+import { ThoughtRecord, DistortionKey } from "@/lib/types";
 import { DISTORTION_DEFINITIONS } from "@/lib/constants";
 
 export default function ThoughtRecordDetailPage() {
@@ -109,7 +109,7 @@ export default function ThoughtRecordDetailPage() {
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {record.distortions.map((key) => {
-                const def = distortionDefMap.get(key);
+                const def = distortionDefMap.get(key as DistortionKey);
                 return (
                   <div
                     key={key}
