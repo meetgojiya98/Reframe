@@ -5,8 +5,14 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
+// On Vercel, ensure NEXTAUTH_URL is set so auth works in production and preview deployments
+if (process.env.VERCEL && process.env.VERCEL_URL && !process.env.NEXTAUTH_URL) {
+  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true, // Required for NextAuth behind Vercel's proxy; avoids "untrusted host" issues
   providers: [
     CredentialsProvider({
       name: "credentials",

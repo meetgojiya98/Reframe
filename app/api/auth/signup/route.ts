@@ -51,8 +51,14 @@ export const POST = withApiHandler(async (request) => {
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Database error";
+    const isSchemaError =
+      typeof message === "string" &&
+      (message.includes("does not exist") || message.includes("Failed query") || message.includes("relation "));
+    const hint = isSchemaError
+      ? " The database schema may not be applied. Run: POSTGRES_URL=\"<your-production-url>\" npm run db:push"
+      : "";
     return NextResponse.json(
-      { error: message },
+      { error: message + hint },
       { status: 500 }
     );
   }
