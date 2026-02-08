@@ -241,7 +241,7 @@ export default function InsightsPage() {
     return "stable" as const;
   }, [filteredCheckins]);
 
-  const bestWeek = useMemo(() => {
+  const bestWeek = useMemo((): { weekStart: string; avg: number; count: number } | null => {
     const byWeek = new Map<string, number[]>();
     filteredCheckins.forEach((entry) => {
       const d = parseISO(entry.dateISO);
