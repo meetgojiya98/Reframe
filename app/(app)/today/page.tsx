@@ -47,6 +47,7 @@ import {
   getTodayDateISO,
   pickMostCommonEmotion
 } from "@/lib/utils";
+import type { ThoughtRecord } from "@/lib/types";
 import { getUnlockedAchievements, getAchievementProgress, getNearlyThereAchievements } from "@/lib/achievements";
 import { getRandomAffirmation, getDailyAffirmation } from "@/lib/affirmations";
 
@@ -1050,7 +1051,7 @@ export default function TodayPage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Most common emotion
               </p>
-              <p className="stat-value mt-2 text-3xl font-bold">{pickMostCommonEmotion(thoughtRecords)}</p>
+              <p className="stat-value mt-2 text-3xl font-bold">{pickMostCommonEmotion(thoughtRecords as ThoughtRecord[])}</p>
             </div>
             <Link href="/skills">
               <div className="rounded-xl border-2 border-border/80 bg-muted/30 p-5 transition hover:border-primary/20 hover:bg-muted/50">
