@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DISTORTION_DEFINITIONS } from "@/lib/constants";
+import type { DistortionKey } from "@/lib/types";
 import { formatDateLabel } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -244,9 +245,9 @@ export default function ThoughtRecordsListPage() {
                           key={d}
                           variant="outline"
                           className="rounded-lg cursor-help"
-                          title={distortionDefMap.get(d) ?? undefined}
+                          title={distortionDefMap.get(d as DistortionKey) ?? undefined}
                         >
-                          {distortionMap.get(d) ?? d.replace(/_/g, " ")}
+                          {distortionMap.get(d as DistortionKey) ?? d.replace(/_/g, " ")}
                         </Badge>
                       ))}
                     </div>
