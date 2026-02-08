@@ -45,8 +45,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // Coerce null to undefined for JWT type (string | undefined)
-        token.email = user.email != null ? user.email : undefined;
+        token.email = (user.email ?? undefined) as string | undefined;
       }
       return token;
     },
