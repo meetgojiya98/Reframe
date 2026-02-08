@@ -18,7 +18,9 @@ export function AnimatedCounter({ value, duration = 0.5, className = "", suffix 
   useEffect(() => {
     const start = display;
     const startTime = performance.now();
-    const cancel = () => rafRef.current && cancelAnimationFrame(rafRef.current);
+    const cancel = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
 
     const step = (now: number) => {
       const elapsed = (now - startTime) / 1000;
