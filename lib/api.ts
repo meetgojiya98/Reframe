@@ -1,3 +1,5 @@
+import type { ThoughtRecord } from "@/lib/types";
+
 const BASE = "";
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -112,7 +114,7 @@ export async function apiThoughtRecordPost(body: {
   });
 }
 
-export async function apiThoughtRecordPut(id: string, body: Record<string, unknown>) {
+export async function apiThoughtRecordPut(id: string, body: ThoughtRecord | Omit<ThoughtRecord, "id" | "createdAt">) {
   return fetchJson<{ ok: boolean }>(`${BASE}/api/user/thought-records/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
