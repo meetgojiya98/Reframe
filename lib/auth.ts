@@ -4,11 +4,11 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { ensureNextAuthEnv } from "@/lib/auth-config";
 
-// On Vercel, ensure NEXTAUTH_URL is set so auth works in production and preview deployments
-if (process.env.VERCEL && process.env.VERCEL_URL && !process.env.NEXTAUTH_URL) {
-  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
-}
+ensureNextAuthEnv();
+
+export const AUTH_DB_UNAVAILABLE = "DatabaseUnavailable";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -20,12 +20,25 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password || !db) return null;
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, credentials.email))
-          .limit(1);
+        if (!credentials?.email || !credentials?.password) return null;
+
+        if (!db) {
+          throw new Error(AUTH_DB_UNAVAILABLE);
+        }
+
+        const email = credentials.email.trim().toLowerCase();
+
+        let user;
+        try {
+          [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+        } catch {
+          throw new Error(AUTH_DB_UNAVAILABLE);
+        }
+
         if (!user) return null;
         const ok = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!ok) return null;

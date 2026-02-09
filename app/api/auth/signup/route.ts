@@ -15,7 +15,10 @@ const signUpSchema = z.object({
 export const POST = withApiHandler(async (request) => {
   if (!db) {
     return NextResponse.json(
-      { error: "Database not configured" },
+      {
+        error:
+          "Database not configured. Set POSTGRES_URL or DATABASE_URL in .env, then run npm run db:push."
+      },
       { status: 503 }
     );
   }
@@ -24,9 +27,10 @@ export const POST = withApiHandler(async (request) => {
   if (validationErr) return validationErr;
 
   const { email, password, name } = body;
+  const normalizedEmail = email.trim().toLowerCase();
 
   try {
-    const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    const [existing] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
     if (existing) {
       return NextResponse.json(
         { error: "An account with this email already exists" },
@@ -38,7 +42,7 @@ export const POST = withApiHandler(async (request) => {
     const id = crypto.randomUUID();
     await db.insert(users).values({
       id,
-      email,
+      email: normalizedEmail,
       passwordHash,
       name: name ?? null,
     });

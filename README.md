@@ -10,7 +10,8 @@ Tagline: **"Reframe — shift your thoughts, gently."**
 - Tailwind CSS
 - shadcn/ui-style component primitives
 - Framer Motion
-- Dexie + IndexedDB (local-first data storage)
+- NextAuth (credentials)
+- Postgres + Drizzle ORM
 - OpenAI API (server-side route handlers only)
 
 ## Local Setup
@@ -23,11 +24,21 @@ Tagline: **"Reframe — shift your thoughts, gently."**
    ```bash
    cp .env.example .env
    ```
-3. Add your OpenAI key in `.env` if you want AI features:
+3. Configure auth + database in `.env`:
+   ```env
+   POSTGRES_URL=postgresql://...
+   NEXTAUTH_SECRET=...
+   NEXTAUTH_URL=http://localhost:3000
+   ```
+4. Apply schema:
+   ```bash
+   npm run db:push
+   ```
+5. Add your OpenAI key in `.env` if you want AI features:
    ```env
    OPENAI_API_KEY=...
    ```
-4. Start dev server:
+6. Start dev server:
    ```bash
    npm run dev
    ```
@@ -36,6 +47,9 @@ Tagline: **"Reframe — shift your thoughts, gently."**
 
 See `.env.example`:
 
+- `POSTGRES_URL` or `DATABASE_URL` (required for signup/login)
+- `NEXTAUTH_SECRET` (required in production; strongly recommended in dev)
+- `NEXTAUTH_URL` (required in production; defaults to request origin in dev)
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL` (default `gpt-4o-mini`)
 - `NEXT_PUBLIC_APP_NAME`
@@ -46,11 +60,9 @@ See `.env.example`:
 
 ## Privacy Model
 
-- Local-first by default using IndexedDB (Dexie).
-- No account required.
-- Entries stay on the device by default.
-- Server endpoints process transient AI requests only.
-- No private journal content is stored on the server by default.
+- Account-based app backed by your configured Postgres database.
+- AI requests are processed server-side and are not used for model training.
+- You control deployment and database retention policies.
 
 ## Safety Behavior
 
@@ -96,4 +108,4 @@ These settings are stored locally and sent to `/api/coach` for server-side enfor
 Notes:
 
 - `/api/coach` already uses `export const runtime = "nodejs"`.
-- App remains local-first on client (Dexie in browser) with no required database service.
+- Signup/login require a configured Postgres database and migrated schema.

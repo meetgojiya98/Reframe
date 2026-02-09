@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+const AUTH_DB_UNAVAILABLE = "DatabaseUnavailable";
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,14 +34,41 @@ function LoginContent() {
         callbackUrl
       });
       if (res?.error) {
-        setError("Invalid email or password.");
+        if (res.error === AUTH_DB_UNAVAILABLE) {
+          setError("Database is not configured. Set POSTGRES_URL or DATABASE_URL and run npm run db:push.");
+          return;
+        }
+
+        if (res.error === "Configuration") {
+          setError("Auth config is incomplete. Set NEXTAUTH_URL and NEXTAUTH_SECRET.");
+          return;
+        }
+
+        if (res.error === "CredentialsSignin") {
+          setError("Invalid email or password.");
+          return;
+        }
+
+        setError(`Sign in failed: ${res.error}`);
         return;
       }
+
+      if (!res?.ok) {
+        setError("Sign in failed. Check your auth configuration and try again.");
+        return;
+      }
+
       // Stay on same origin: NextAuth's res.url can point to NEXTAUTH_URL (e.g. production), causing 404 when on localhost
       let path = "/today";
       if (typeof callbackUrl === "string") {
         if (callbackUrl.startsWith("/")) path = callbackUrl;
-        else if (callbackUrl.startsWith("http")) path = new URL(callbackUrl).pathname;
+        else if (callbackUrl.startsWith("http")) {
+          try {
+            path = new URL(callbackUrl).pathname;
+          } catch {
+            path = "/today";
+          }
+        }
       }
       router.push(path);
     } finally {
