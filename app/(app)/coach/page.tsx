@@ -156,7 +156,15 @@ export default function CoachPage() {
       const payload = (await response.json()) as CoachResponse & { error?: string };
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Coach request failed.");
+        const errorMessage = payload.error ?? "Coach request failed.";
+        addAssistantMessage(
+          errorMessage.includes("OpenAI is not configured")
+            ? "AI coach is currently unavailable because OpenAI is not configured. You can still use the guided prompts here, or enable AI after setting OPENAI_API_KEY."
+            : `I couldn't generate an AI response just now (${errorMessage}). Let's keep going: ${localFallbackReply(userText)}`
+        );
+        setToolSuggestion(undefined);
+        toast.error(errorMessage);
+        return;
       }
 
       if (payload.blocked) {
@@ -171,10 +179,14 @@ export default function CoachPage() {
 
       if (payload.message) {
         addAssistantMessage(payload.message);
+      } else {
+        addAssistantMessage(localFallbackReply(userText));
       }
 
       setToolSuggestion(payload.toolSuggestion);
     } catch (error) {
+      // Keep the conversation moving even when AI/API fails.
+      addAssistantMessage(localFallbackReply(userText));
       toast.error(error instanceof Error ? error.message : "Could not reach coach.");
     } finally {
       setLoading(false);
