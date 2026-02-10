@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { LoaderCircle, Save, Send, Copy, RotateCcw, FileText } from "lucide-react";
+import { LoaderCircle, Save, Send, Copy, RotateCcw, FileText, AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,6 +75,7 @@ export default function CoachPage() {
     maxTokens: 450
   });
   const [toolSuggestion, setToolSuggestion] = useState<CoachResponse["toolSuggestion"]>();
+  const [runtimeAiIssue, setRuntimeAiIssue] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -93,6 +94,17 @@ export default function CoachPage() {
 
   const aiAvailable = Boolean(profile?.aiEnabled) && !localOnly;
   const currentPathway = useMemo(() => PATHWAY_OPTIONS.find((item) => item.id === pathway), [pathway]);
+  const configuredAiIssue = useMemo(() => {
+    if (localOnly) {
+      return "Local-only mode is enabled, so AI replies are turned off.";
+    }
+    if (profile && !profile.aiEnabled) {
+      return "AI Coach is turned off in Settings, so guided fallback replies are being used.";
+    }
+    return null;
+  }, [localOnly, profile]);
+
+  const coachNotice = runtimeAiIssue ?? configuredAiIssue;
 
   const addAssistantMessage = (content: string) => {
     setMessages((prev) => [...prev, { role: "assistant", content }]);
@@ -132,6 +144,7 @@ export default function CoachPage() {
     setMessages(nextMessages);
 
     if (!aiAvailable) {
+      setRuntimeAiIssue(null);
       addAssistantMessage(localFallbackReply(userText));
       return;
     }
@@ -157,6 +170,11 @@ export default function CoachPage() {
 
       if (!response.ok) {
         const errorMessage = payload.error ?? "Coach request failed.";
+        setRuntimeAiIssue(
+          errorMessage.includes("OpenAI is not configured")
+            ? "AI service is not configured on the server right now. Showing guided fallback replies."
+            : "AI service is temporarily unavailable. Showing guided fallback replies."
+        );
         addAssistantMessage(
           errorMessage.includes("OpenAI is not configured")
             ? "AI coach is currently unavailable because OpenAI is not configured. You can still use the guided prompts here, or enable AI after setting OPENAI_API_KEY."
@@ -179,13 +197,16 @@ export default function CoachPage() {
 
       if (payload.message) {
         addAssistantMessage(payload.message);
+        setRuntimeAiIssue(null);
       } else {
+        setRuntimeAiIssue("AI returned no message. Showing guided fallback replies.");
         addAssistantMessage(localFallbackReply(userText));
       }
 
       setToolSuggestion(payload.toolSuggestion);
     } catch (error) {
       // Keep the conversation moving even when AI/API fails.
+      setRuntimeAiIssue("AI service is temporarily unavailable. Showing guided fallback replies.");
       addAssistantMessage(localFallbackReply(userText));
       toast.error(error instanceof Error ? error.message : "Could not reach coach.");
     } finally {
@@ -200,6 +221,22 @@ export default function CoachPage() {
         subtitle="Educational CBT-informed support. One small step at a time."
         title="Coach"
       />
+
+      {coachNotice ? (
+        <Card className="rounded-2xl border-amber-300/60 bg-amber-50/70 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10">
+          <CardContent className="flex items-start justify-between gap-3 p-4">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
+              <p className="text-sm text-amber-900 dark:text-amber-100">{coachNotice}</p>
+            </div>
+            {configuredAiIssue && !localOnly ? (
+              <Button asChild size="sm" variant="outline" className="shrink-0 rounded-lg border-amber-400/60">
+                <Link href="/settings">Open Settings</Link>
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Choose a pathway</h2>
